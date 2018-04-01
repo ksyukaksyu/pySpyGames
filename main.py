@@ -1,8 +1,8 @@
 import requests
-import time
-import pprint
+from time import sleep
+from random import random
 import json
-
+from clint.textui import progress
 
 # ВОПРОС 1: нужно ли писать авторизацию? Или это только для приложения в вк?
 
@@ -25,56 +25,69 @@ TOKEN_VK = '7b23e40ad10e08d3b7a8ec0956f2c57910c455e886b480b7d9fb59859870658c4a0b
 class VKController:
     def __init__(self, token):
         self.token = token
-        self.params = {
-            'v': '5.73',
-            'access_token': self.token,
-        }
+        self.version = '5.73'
 
-    def get_request(self, method_name):
-        return set(requests.get(
+    def get_request(self, method_name, params = {}):
+        sleep(0.3)
+        print('    Request {}... '.format(method_name))
+        params['v'] = self.version
+        params['access_token'] = self.token
+        return requests.get(
             'https://api.vk.com/method/{}?'.format(method_name),
-            params=self.params
-        ))
+            params = params
+        ).json()
 
-    def get_request_response_items(self, method_name):
-        return set(requests.get(
-            'https://api.vk.com/method/{}?'.format(method_name),
-            params=self.params
-        ).json()['response']['items'])
+    def get_request_response_items(self, method_name, params):
+        return self.get_request(method_name, params)['response']['items']
+
+    def save_to_json(self, file_name, data):
+        with open('{}.json'.format(file_name), 'w') as f:
+            json.dump(data, f, ensure_ascii = False, indent = 4)
+        print('Список групп доступен в файле {}.json.'.format(file_name))
 
 
 class VKUser(VKController):
     def __init__(self, token, user):
         super().__init__(token)
-        self.params['user_ids'] = user
+        self.user_id = user
 
-    # ВАРИАНТ 2
     def get_unmutual_groups(self):
         unmutual_groups = set()
-        for group in self.get_request_response_items('groups.get'):
-            self.params['filter'] = 'friends'
-            self.params['group_id'] = group
-            time.sleep(0.3)
-            if not self.get_request_response_items('groups.getMembers'):
+        for group in self.get_request_response_items('groups.get', {
+            'user_ids': self.user_id
+        }):
+
+            if not self.get_request_response_items('groups.getMembers', {
+                'filter': 'friends',
+                'group_id': group
+            }):
                 unmutual_groups.add(str(group))
         return unmutual_groups
 
+    def get_group_info(self, data):
+        group_info_list = []
+        for group in data:
+            group_main_info = self.get_request('groups.getById', {
+                'group_id': group
+            })
+            group_count = self.get_request('groups.getMembers', {
+                'group_id': group
+            })
+            group_info = {
+                'name': group_main_info['response'][0]['name'],
+                'gid': str(group),
+                'members_count': group_count['response']['count'],
+            }
+            group_info_list.append(group_info)
+        return group_info_list
 
-y = VKUser(TOKEN_VK, 5030613)
 
-# get_user_friends = set(requests.get(
-#     'https://api.vk.com/method/friends.get?',
-#     params=user_params
-# ).json()['response']['items'])
+def main():
+    user = VKUser(TOKEN_VK, input('Введите id или короткий адрес пользователя VK: '))
+    user.save_to_json('groups', user.get_group_info(user.get_unmutual_groups()))
 
-print('ID друзей юзера:', len(y.get_request_response_items('friends.get')), y.get_request_response_items('friends.get'))
 
-# get_user_groups = set(requests.get(
-#     'https://api.vk.com/method/groups.get?',
-#     params=user_params
-# ).json()['response']['items'])
-
-print('ID групп юзера:', len(y.get_request_response_items('groups.get')), y.get_request_response_items('groups.get'))
+main()
 
 # ВОПРОС 2: Нашла 2 варианта решения задачи поиска групп, в которых не состоят друзья юзера. В первом варианте
 # (закомменчен) мы ищем соотвествие между членами группы и друзьями юзера через множества. Если пересечения нет,
@@ -119,41 +132,3 @@ print('ID групп юзера:', len(y.get_request_response_items('groups.get'
 #
 #     if not get_group_members:
 #         unmutual_groups.add(str(group))
-
-print('ID групп юзера, где нет друзей:', y.get_unmutual_groups())
-
-# fre = {}
-# count = None
-# ginfo = None
-# lits = []
-# for g in unmutual_groups:
-#     group_params2 = {
-#         'group_id': g,
-#         'v': '5.73',
-#         'access_token': TOKEN_VK,
-#     }
-#     time.sleep(0.3)
-#
-#     ginfo = requests.get(
-#         'https://api.vk.com/method/groups.getById?',
-#         params=group_params2
-#     ).json()['response']
-#
-#     time.sleep(0.3)
-#
-#     count = requests.get(
-#         'https://api.vk.com/method/groups.getMembers?',
-#         params=group_params2
-#     ).json()['response']['count']
-#
-#     d = {
-#         'name': ginfo[0]['name'],
-#         'gid': str(g),
-#         'members_count': count,
-#     }
-#     lits.append(d)
-#
-# pprint.pprint(lits)
-#
-# with open('groups.json', 'w') as f:
-#     json.dump(lits, f)
