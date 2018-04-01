@@ -19,14 +19,20 @@ import json
 
 TOKEN_VK = '7b23e40ad10e08d3b7a8ec0956f2c57910c455e886b480b7d9fb59859870658c4a0b8fdc4dd494db19099'
 
+# ВОПРОС 2: в целом, хочу получить комментарий о логичности выбора именно такой структуры классов, мне кажется, что я
+# сделала не совсем верно и не максимально эффективно. Я постаралась максимально избежать дублирования кода, но опять
+# же, возможно, можно сделать лучше. Если да, подскажите, пожалуйста.
+
 
 class VKController:
     def __init__(self, token):
         self.token = token
         self.version = '5.73'
 
+    # ВОПРОС 3: могут ли params быть по умолчанию пустыми? Pycharm ругается
     def get_request(self, method_name, params = {}):
         sleep(0.3)
+        # ВОПРОС 4: пыталась сделать прогресс бар с помощью clint, и не поняла, как в этот код его правильно впихнуть?
         print('    Request {}... '.format(method_name))
         params['v'] = self.version
         params['access_token'] = self.token
@@ -38,6 +44,7 @@ class VKController:
     def get_request_response_items(self, method_name, params):
         return self.get_request(method_name, params)['response']['items']
 
+    # ВОПРОС 5: необходимо ли методы без self выносить за пределы класса?
     def save_to_json(self, file_name, data):
         with open('{}.json'.format(file_name), 'w') as f:
             json.dump(data, f, ensure_ascii = False, indent = 4)
@@ -87,7 +94,7 @@ def main():
 
 main()
 
-# ВОПРОС 2: Нашла 2 варианта решения задачи поиска групп, в которых не состоят друзья юзера. В первом варианте
+# ВОПРОС 6: Нашла 2 варианта решения задачи поиска групп, в которых не состоят друзья юзера. В первом варианте
 # (закомменчен) мы ищем соотвествие между членами группы и друзьями юзера через множества. Если пересечения нет,
 # запоминаем id группы. Во втором варианте мы, используя параметры api, получаем только тех участников, кто дружит
 # с юзером.
