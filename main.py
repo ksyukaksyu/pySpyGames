@@ -1,8 +1,6 @@
 import requests
 from time import sleep
-from random import random
 import json
-from clint.textui import progress
 
 # ВОПРОС 1: нужно ли писать авторизацию? Или это только для приложения в вк?
 
