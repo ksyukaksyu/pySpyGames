@@ -46,7 +46,7 @@ class VKUser(VKController):
             group_members = set(self.get_request_response_items('groups.getMembers', {
                 'group_id': group
             }))
-            if not group_members & user_friends:
+            if not (group_members & user_friends):
                 different_groups.add(str(group))
         return different_groups
 
