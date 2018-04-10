@@ -10,14 +10,14 @@ class VKController:
         self.token = token
         self.version = '5.73'
 
-    def get_request(self, method_name, params = None):
+    def get_request(self, method_name, params=None):
         sleep(0.3)
         print('    Request {}... '.format(method_name))
         params['v'] = self.version
         params['access_token'] = self.token
         return requests.get(
             'https://api.vk.com/method/{}?'.format(method_name),
-            params = params
+            params=params
         ).json()
 
     def get_request_response_items(self, method_name, params):
@@ -26,7 +26,7 @@ class VKController:
     @classmethod
     def save_to_json(cls, file_name, data):
         with open('{}.json'.format(file_name), 'w') as f:
-            json.dump(data, f, ensure_ascii = False, indent = 4)
+            json.dump(data, f, ensure_ascii=False, indent=4)
         print('Список групп доступен в файле {}.json.'.format(file_name))
 
 
@@ -35,20 +35,27 @@ class VKUser(VKController):
         super().__init__(token)
         self.user_id = user
 
+    '''Вы должны взять группы жертвы и его список друзей. После этого у каждого друга спросить его группы. 
+       Вычесть группы жертвы из групп друзей. В итоге останутся только уникальные'''
+
     def get_different_groups(self):
-        different_groups = set()
         user_friends = set(self.get_request_response_items('friends.get', {
             'user_ids': self.user_id
         }))
-        for group in self.get_request_response_items('groups.get', {
+        user_groups = set(self.get_request_response_items('groups.get', {
             'user_ids': self.user_id
-        }):
-            group_members = set(self.get_request_response_items('groups.getMembers', {
-                'group_id': group
+        }))
+        print(user_friends)
+        friends_groups = set()
+        for friend in user_friends:
+            print('id друга', friend)
+            friend_groups = set(self.get_request_response_items('groups.get', {
+                'user_ids': friend
             }))
-            if not (group_members & user_friends):
-                different_groups.add(str(group))
-        return different_groups
+            print('группы друга', friend_groups)
+            friends_groups |= friend_groups
+            print('группы друзей', friends_groups)
+        return friends_groups - user_groups
 
     def get_group_info(self, data):
         group_info_list = []
@@ -70,7 +77,10 @@ class VKUser(VKController):
 
 def main():
     user = VKUser(TOKEN_VK, input('Введите id или короткий адрес пользователя VK: '))
-    user.save_to_json('groups', user.get_group_info(user.get_different_groups()))
+    # user.save_to_json('groups', user.get_group_info(user.get_different_groups()))
+    print(set(user.get_request_response_items('groups.get', {
+        'user_ids': 93179895
+    })))
 
 
 main()
