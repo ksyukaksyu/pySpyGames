@@ -12,7 +12,6 @@ class VKController:
 
     def get_request(self, method_name, params = None):
         sleep(0.3)
-        # print('    Request {}... '.format(method_name))
         params['v'] = self.version
         params['access_token'] = self.token
         return requests.get(
@@ -38,21 +37,18 @@ class VKUser(VKController):
     def __init__(self, token, user):
         super().__init__(token)
         if not user.isdigit():
-            print("Getting user's details...")
+            print("Получение информации о пользователе...")
             response = self.get_request('users.get', {
                 'user_ids': user
             })
             if 'error' in response:
-                print("User \"{}\" not found".format(user))
+                print("Пользователь \"{}\" не найден.".format(user))
                 self.found = False
                 return
             self.user_id = response['response'][0]['id']
             self.found = True
         else:
             self.user_id = user
-
-    '''Вы должны взять группы жертвы и его список друзей. После этого у каждого друга спросить его группы. 
-       Вычесть группы жертвы из групп друзей. В итоге останутся только уникальные'''
 
     def get_different_groups(self):
         user_friends = set(self.get_request_response_items('friends.get', {
@@ -61,40 +57,36 @@ class VKUser(VKController):
         user_groups = set(self.get_request_response_items('groups.get', {
             'user_id': self.user_id
         }))
-        # print(user_friends)
         common_groups = set()
         step = 100 / len(user_friends)
         progress = 0
-        print("Getting friends data...")
+        print("Получение информации о друзьях пользователя...")
         for friend in user_friends:
             progress += step
-            print("[FRIENDS] Loading: {:2.1%}".format(progress / 100))
-            # print('id друга', friend)
+            print("[ДРУЗЬЯ] Прогресс: {:2.1%}".format(progress / 100), end = '\r')
             groups_of_friend = set(self.get_request_response_items('groups.get', {
                 'user_id': friend
             }))
-            # print('группы друга', groups_of_friend)
             common_groups |= groups_of_friend
-            # print('группы друзей', friends_groups)
         return user_groups - common_groups
 
     def get_group_info(self, data):
         group_info_list = []
         step = 100 / len(data)
         progress = 0
-        print("Getting groups data...")
+        print("Получение информации о группах...")
         for group in data:
             progress += step
-            print("[GROUPS] Loading: {:2.1%}".format(progress / 100))
+            print("[ГРУППЫ] Прогресс: {:2.1%}".format(progress / 100), end = '\r')
             group_info = self.get_request('groups.getById', {
                 'group_id': group
             })
-            if not 'response' in group_info:
+            if 'response' not in group_info:
                 continue
             group_members = self.get_request('groups.getMembers', {
                 'group_id': group
             })
-            if not 'response' in group_members:
+            if 'response' not in group_members:
                 continue
             group_data = {
                 'name': group_info['response'][0]['name'],
