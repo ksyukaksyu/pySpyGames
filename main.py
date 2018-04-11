@@ -1,6 +1,7 @@
 import requests
 from time import sleep
 import json
+from tqdm import tqdm
 
 TOKEN_VK = '7b23e40ad10e08d3b7a8ec0956f2c57910c455e886b480b7d9fb59859870658c4a0b8fdc4dd494db19099'
 
@@ -61,9 +62,9 @@ class VKUser(VKController):
         step = 100 / len(user_friends)
         progress = 0
         print("Получение информации о друзьях пользователя...")
-        for friend in user_friends:
+        for friend in tqdm(user_friends):
             progress += step
-            print("[ДРУЗЬЯ] Прогресс: {:2.1%}".format(progress / 100), end = '\r')
+            # print("[ДРУЗЬЯ] Прогресс: {:2.1%}".format(progress / 100))
             groups_of_friend = set(self.get_request_response_items('groups.get', {
                 'user_id': friend
             }))
@@ -75,9 +76,9 @@ class VKUser(VKController):
         step = 100 / len(data)
         progress = 0
         print("Получение информации о группах...")
-        for group in data:
+        for group in tqdm(data):
             progress += step
-            print("[ГРУППЫ] Прогресс: {:2.1%}".format(progress / 100), end = '\r')
+            # print("[ГРУППЫ] Прогресс: {:2.1%}".format(progress / 100))
             group_info = self.get_request('groups.getById', {
                 'group_id': group
             })
